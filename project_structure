@@ -1,0 +1,24 @@
+krisha-monitoring/
+├── docker-compose.yml
+├── Makefile
+├── .env
+├── .gitignore
+├── scraper_service/
+│   ├── pyproject.toml
+│   ├── poetry.lock
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── database.py
+│   │   ├── scraper.py
+│   │   └── api.py
+│   └── tests/
+└── telegram_bot/
+    ├── pyproject.toml
+    ├── poetry.lock
+    ├── src/
+    │   ├── __init__.py
+    │   ├── main.py
+    │   ├── bot.py
+    │   └── filters.py
+    └── tests/ 
