@@ -9,11 +9,12 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     expose:
       - "${POSTGRES_PORT}"
     ports:
       - "5444:5432"
+    networks:
+      - rent_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -28,47 +29,100 @@ services:
       - "6380:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - rent_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"  # AMQP порт
+      - "15672:15672"  # Management UI порт
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - rent_network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   scraper:
     build:
       context: ./scraper_service
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 5 &&
-        poetry run alembic upgrade head &&
-        poetry run python src/main.py
-      "
-    volumes:
-      - ./scraper_service:/app
+      - SCRAPER_SERVICE_PORT=8088
+      - PYTHONUNBUFFERED=1
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/
     ports:
-      - "${SCRAPER_SERVICE_PORT}:${SCRAPER_SERVICE_PORT}"
-
-  bot:
-    build:
-      context: ./telegram_bot
-      dockerfile: Dockerfile
-    environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      REDIS_URL: ${REDIS_URL}
-      SCRAPER_SERVICE_URL: http://scraper:${SCRAPER_SERVICE_PORT}
+      - "8088:8088"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - rent_network
+    restart: no
+    command: >
+      sh -c "
+        poetry install --no-interaction &&
+        poetry run alembic upgrade head &&
+        poetry run python src/main.py
+      "
+
+  bot:
+    build:
+      context: ./telegram_bot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - SCRAPER_SERVICE_URL=http://scraper:8088
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - scraper
+    networks:
+      - rent_network
+    restart: no
+
+  notification_service:
+    build:
+      context: ./notification_service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - NOTIFICATION_SERVICE_PORT=8001
+      - PYTHONUNBUFFERED=1
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/
+      - TELEGRAM_NOTIFICATION_BOT_TOKEN=${TELEGRAM_NOTIFICATION_BOT_TOKEN}
+      - TELEGRAM_ADMIN_ID=${TELEGRAM_ADMIN_ID}
+    ports:
+      - "8001:8001"
+    depends_on:
       scraper:
         condition: service_started
-    volumes:
-      - ./telegram_bot:/app
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - rent_network
+    restart: no
 
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
+
+# Определяем сеть
+networks:
+  rent_network:
+    driver: bridge

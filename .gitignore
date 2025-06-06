@@ -21,9 +21,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Poetry
-poetry.lock
-
 # Virtual Environment
 .env
 .venv
@@ -48,4 +45,13 @@ ENV/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+.telegram_scraper_session2.session
+.telegram_scraper_session2.session-journal
+
+telegram_scraper_session2.session
+telegram_scraper_session2.session-journal
+
+scraper_service/src/telegram/telegram_scraper_session.session
+scraper_service/src/telegram/telegram_scraper_session.session-journal

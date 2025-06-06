@@ -1,0 +1,3 @@
+"""
+Rent Service Bot package
+"""

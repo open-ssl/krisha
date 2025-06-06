@@ -13,25 +13,34 @@ run-scraper:
 run-bot:
 	cd telegram_bot && poetry run python src/main.py
 
+# Команды форматирования
+format-telegram:
+	@cd telegram_bot && poe format
+
+format-scraper:
+	@cd scraper_service && poe format
+
+format: format-telegram format-scraper
+
 # Команды для Docker
 docker-build:
-	docker-compose build
+	docker compose build
 
 docker-up:
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
-	docker-compose down
+	docker compose down
 
 docker-logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 docker-restart:
-	docker-compose restart
+	docker compose restart
 
 # Команды для очистки
 docker-clean:
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 # Полезные комбинации команд
@@ -42,8 +51,14 @@ docker-init: docker-build docker-up docker-logs
 
 # Команда для пересборки только сервисов без инфраструктуры
 docker-rebuild-services:
-	docker-compose stop scraper bot
-	docker-compose rm -f scraper bot
-	docker-compose build scraper bot
-	docker-compose up -d scraper bot
-	docker-compose logs -f scraper bot 
+	docker compose stop scraper bot notification_service
+	docker compose rm -f scraper bot notification_service
+	docker compose build scraper bot notification_service
+	docker compose up -d scraper bot notification_service
+	docker compose logs -f scraper bot notification_service
+
+docker-rebuild-services-server:
+	docker compose stop scraper bot notification_service
+	docker compose rm -f scraper bot notification_service
+	docker compose build scraper bot notification_service
+	docker compose up -d scraper bot notification_service

@@ -1,0 +1,19 @@
+image: python:latest
+
+stages:
+  - deploy
+
+pull-project-on-server:
+  image: alpine
+  stage: deploy
+  before_script:
+    - echo "Start to pull project!"
+    - apk add --no-cache openssh bash
+    - mkdir -p ~/.ssh
+    - echo "$SECRET_KEY" >> ~/.ssh/id_rsa
+    - chmod 700 ~/.ssh
+    - chmod 600 ~/.ssh/*
+  script:
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh root@$PROJECT_HOST "cd $PROJECT_PATH && git pull && make docker-rebuild-services-server && exit"
+    - echo "Everything is GOOD!"
