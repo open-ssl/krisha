@@ -15,6 +15,7 @@ load_dotenv()
 # Основные настройки бота
 TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 MAX_MESSAGE_LENGTH: int = int(os.environ.get("MAX_MESSAGE_LENGTH", "3500"))
+TELEGRAM_ADMIN_ID: str = os.environ.get("TELEGRAM_ADMIN_ID", "")
 
 # Настройки подключения к API
 SCRAPER_SERVICE_URL: str = os.environ.get("SCRAPER_SERVICE_URL", "")

@@ -151,7 +151,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)  # Telegram user ID
+    id = Column(sa.BigInteger, primary_key=True)  # Telegram user ID
     is_active = Column(Boolean, default=True)  # Флаг активности пользователя
     filter_type = Column(String, nullable=True)  # Тип установленного фильтра
     created_at = Column(DateTime, default=datetime.utcnow)
